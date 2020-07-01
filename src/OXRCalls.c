@@ -128,6 +128,12 @@ struct _openxr_api_private
 	godot_int godot_controllers[2];
 
 	bool monado_stick_on_ball_ext;
+
+	bool hand_tracking_supported;
+	XrHandTrackerEXT hand_trackers[2];
+	PFN_xrLocateHandJointsEXT pfnLocateHandJointsEXT;
+	XrHandJointLocationEXT joints[2][XR_HAND_JOINT_COUNT_EXT];
+	XrHandJointLocationsEXT joint_locations[2];
 };
 
 bool
@@ -466,6 +472,11 @@ init_openxr()
 		self->monado_stick_on_ball_ext = true;
 	}
 
+
+	bool hand_tracking_extension_supported =
+	    isExtensionSupported(XR_EXT_HAND_TRACKING_EXTENSION_NAME,
+	                         extensionProperties, extensionCount);
+
 	const char *enabledExtensions[extensionCount];
 
 	int enabledExtensionCount = 0;
@@ -475,6 +486,11 @@ init_openxr()
 	if (self->monado_stick_on_ball_ext) {
 		enabledExtensions[enabledExtensionCount++] =
 		    XR_MND_BALL_ON_STICK_EXTENSION_NAME;
+	}
+
+	if (hand_tracking_extension_supported) {
+		enabledExtensions[enabledExtensionCount++] =
+		    XR_EXT_HAND_TRACKING_EXTENSION_NAME;
 	}
 
 	XrInstanceCreateInfo instanceCreateInfo = {
@@ -516,11 +532,22 @@ init_openxr()
 	    .graphicsProperties = {0},
 	    .trackingProperties = {0},
 	};
+
+	XrSystemHandTrackingPropertiesEXT ht = {
+	    .type = XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT, .next = NULL};
+
+	if (hand_tracking_extension_supported) {
+		systemProperties.next = &ht;
+	}
+
 	result =
 	    xrGetSystemProperties(self->instance, systemId, &systemProperties);
 	if (!xr_result(self->instance, result,
 	               "Failed to get System properties"))
 		return NULL;
+
+	self->hand_tracking_supported =
+	    hand_tracking_extension_supported && ht.supportsHandTracking;
 
 	XrViewConfigurationType viewConfigType =
 	    XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
@@ -917,6 +944,62 @@ init_openxr()
 
 	printf("initialized controllers %d %d\n", self->godot_controllers[0],
 	       self->godot_controllers[1]);
+
+	if (self->hand_tracking_supported) {
+		PFN_xrCreateHandTrackerEXT pfnCreateHandTrackerEXT = NULL;
+		result = xrGetInstanceProcAddr(
+		    self->instance, "xrCreateHandTrackerEXT",
+		    (PFN_xrVoidFunction *)&pfnCreateHandTrackerEXT);
+
+		if (!xr_result(
+		        self->instance, result,
+		        "Failed to get xrCreateHandTrackerEXT function!"))
+			return NULL;
+
+		{
+			XrHandTrackerCreateInfoEXT hand_tracker_create_info = {
+			    .type = XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT,
+			    .next = NULL,
+			    .hand = XR_HAND_LEFT_EXT,
+			    .handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT};
+			result = pfnCreateHandTrackerEXT(
+			    self->session, &hand_tracker_create_info,
+			    &self->hand_trackers[0]);
+			if (!xr_result(self->instance, result,
+			               "Failed to create left hand tracker")) {
+				return NULL;
+			}
+			printf("Created hand tracker for left hand\n");
+		}
+		{
+			XrHandTrackerCreateInfoEXT hand_tracker_create_info = {
+			    .type = XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT,
+			    .next = NULL,
+			    .hand = XR_HAND_RIGHT_EXT,
+			    .handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT};
+			result = pfnCreateHandTrackerEXT(
+			    self->session, &hand_tracker_create_info,
+			    &self->hand_trackers[1]);
+			if (!xr_result(self->instance, result,
+			               "Failed to create right hand tracker")) {
+				return NULL;
+			}
+			printf("Created hand tracker for right hand\n");
+		}
+
+		if (self->hand_tracking_supported) {
+			result = xrGetInstanceProcAddr(
+			    self->instance, "xrLocateHandJointsEXT",
+			    (PFN_xrVoidFunction *)&self
+			        ->pfnLocateHandJointsEXT);
+
+			if (!xr_result(self->instance, result,
+			               "Failed to get xrLocateHandJointsEXT "
+			               "function!")) {
+				return NULL;
+			}
+		}
+	}
 
 	return (OpenXRApi *)self;
 }
@@ -1483,5 +1566,56 @@ process_openxr(OpenXRApi *self)
 	if (self->frameState.shouldRender) {
 		// TODO: Tell godot not do render VR to save resources.
 		// See render_openxr() for the corresponding early exit.
+		// TODO: only true once on monado?
+		// return;
+	}
+
+	if (self->hand_tracking_supported) {
+
+		for (int i = 0; i < 2; i++) {
+
+			self->joint_locations[i] = (XrHandJointLocationsEXT){
+			    .type = XR_TYPE_HAND_JOINT_LOCATIONS_EXT,
+			    .jointCount = XR_HAND_JOINT_COUNT_EXT,
+			    .jointLocations = self->joints[i],
+			};
+
+			if (self->hand_trackers[i] == NULL)
+				continue;
+
+			XrHandJointsLocateInfoEXT locateInfo = {
+			    .type = XR_TYPE_HAND_JOINTS_LOCATE_INFO_EXT,
+			    .next = NULL,
+			    .baseSpace = self->local_space,
+			    .time = self->frameState.predictedDisplayTime};
+
+			result = self->pfnLocateHandJointsEXT(
+			    self->hand_trackers[i], &locateInfo,
+			    &self->joint_locations[i]);
+			if (!xr_result(self->instance, result,
+			               "failed to locate hand %d joints!", i))
+				break;
+
+			if (self->joint_locations[i].isActive) {
+				printf("located hand %d joints ", i);
+				for (uint32_t j = 0;
+				     j < self->joint_locations[i].jointCount;
+				     j++) {
+					printf("(%4.2f %4.2f %4.2f )",
+					       self->joint_locations[i]
+					           .jointLocations[j]
+					           .pose.position.x,
+					       self->joint_locations[i]
+					           .jointLocations[j]
+					           .pose.position.y,
+					       self->joint_locations[i]
+					           .jointLocations[j]
+					           .pose.position.z);
+				}
+				printf("\n");
+			} else {
+				printf("hand %d joints inactive\n", i);
+			}
+		}
 	}
 }
