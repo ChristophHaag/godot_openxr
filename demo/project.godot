@@ -21,12 +21,21 @@ config/icon="res://icon.png"
 
 [display]
 
+window/size/width=800
+window/size/height=500
 window/vsync/use_vsync=false
 
 [gdnative]
 
 singletons=[ "res://addons/godot-openxr/godot_openxr.gdnlib" ]
 
-[rendering]
+[layer_names]
 
-environment/default_environment="res://default_env.tres"
+3d_physics/layer_1="Player"
+3d_physics/layer_2="Environment"
+3d_physics/layer_3="Objects"
+3d_physics/layer_11="Picked up"
+
+[physics]
+
+common/physics_fps=90
