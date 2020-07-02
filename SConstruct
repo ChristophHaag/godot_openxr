@@ -4,8 +4,6 @@ import os, subprocess
 # Local dependency paths, adapt them to your setup
 godot_headers_path = ARGUMENTS.get("headers", "godot_headers/")
 
-#openhmd_path = ARGUMENTS.get("openhmd", os.getenv("OPENHMD_PATH", "OpenHMD/"))
-
 target = ARGUMENTS.get("target", "debug")
 
 # platform= makes it in line with Godots scons file, keeping p for backwards compatibility
@@ -28,6 +26,7 @@ if platform == "windows":
 
 if ARGUMENTS.get("use_llvm", "no") == "yes":
     env["CXX"] = "clang++"
+    env["CC"] = "clang"
 
 def add_sources(sources, directory):
     for file in os.listdir(directory):
