@@ -2,16 +2,7 @@ extends Spatial
 
 
 func _ready():
-	var arvr_interface = ARVRServer.find_interface("OpenXR")
-	if arvr_interface and arvr_interface.initialize():
-		# list devices
-		print("AR VR Interface initialized")
-
-		# and tell our viewport to render
-		get_viewport().arvr = true
-		print("Started ARVR")
-		
-		Engine.iterations_per_second = 144
+	pass
 
 
 func _process(delta):

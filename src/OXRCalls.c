@@ -129,6 +129,8 @@ struct _openxr_api_private
 
 	bool monado_stick_on_ball_ext;
 
+	XrSpaceLocation spaceLocation[HANDCOUNT];
+
 	bool hand_tracking_supported;
 	XrHandTrackerEXT hand_trackers[2];
 	PFN_xrLocateHandJointsEXT pfnLocateHandJointsEXT;
@@ -432,6 +434,9 @@ init_openxr()
 	OpenXRApi *self = malloc(sizeof(struct _openxr_api_private));
 
 	self->buffer_index = NULL;
+
+	self->joint_locations[0].jointLocations = NULL;
+	self->joint_locations[1].jointLocations = NULL;
 
 	self->state = XR_SESSION_STATE_UNKNOWN;
 	self->should_render = false;
@@ -1176,31 +1181,27 @@ fill_projection_matrix(OpenXRApi *self,
 
 bool
 _transform_from_rot_pos(godot_transform *p_dest,
-                        XrSpaceLocation *location,
+                        XrPosef *pose,
                         float p_world_scale)
 {
 	godot_quat q;
 	godot_basis basis;
 	godot_vector3 origin;
 
-	if (location->pose.orientation.x == 0 &&
-	    location->pose.orientation.y == 0 &&
-	    location->pose.orientation.z == 0 &&
-	    location->pose.orientation.w == 0)
+	if (pose->orientation.x == 0 && pose->orientation.y == 0 &&
+	    pose->orientation.z == 0 && pose->orientation.w == 0)
 		return false;
 
 	// convert orientation quad to position, should add helper function for
 	// this
 	// :)
-	api->godot_quat_new(
-	    &q, location->pose.orientation.x, location->pose.orientation.y,
-	    location->pose.orientation.z, location->pose.orientation.w);
+	api->godot_quat_new(&q, pose->orientation.x, pose->orientation.y,
+	                    pose->orientation.z, pose->orientation.w);
 	api->godot_basis_new_with_euler_quat(&basis, &q);
 
-	api->godot_vector3_new(&origin,
-	                       location->pose.position.x * p_world_scale,
-	                       location->pose.position.y * p_world_scale,
-	                       location->pose.position.z * p_world_scale);
+	api->godot_vector3_new(&origin, pose->position.x * p_world_scale,
+	                       pose->position.y * p_world_scale,
+	                       pose->position.z * p_world_scale);
 	api->godot_transform_new(p_dest, &basis, &origin);
 
 	return true;
@@ -1236,7 +1237,7 @@ update_controllers(OpenXRApi *self)
 	_getActionStates(self, self->actions[POSE_ACTION_INDEX],
 	                 XR_TYPE_ACTION_STATE_POSE, (void **)poseStates);
 
-	XrSpaceLocation spaceLocation[HANDCOUNT];
+
 
 	for (int i = 0; i < HANDCOUNT; i++) {
 		if (!poseStates[i].isActive) {
@@ -1245,18 +1246,18 @@ update_controllers(OpenXRApi *self)
 			continue;
 		}
 
-		spaceLocation[i].type = XR_TYPE_SPACE_LOCATION;
-		spaceLocation[i].next = NULL;
+		self->spaceLocation[i].type = XR_TYPE_SPACE_LOCATION;
+		self->spaceLocation[i].next = NULL;
 
 		result = xrLocateSpace(self->handSpaces[i], self->local_space,
 		                       self->frameState.predictedDisplayTime,
-		                       &spaceLocation[i]);
+		                       &self->spaceLocation[i]);
 		xr_result(self->instance, result, "failed to locate space %d!",
 		          i);
 		bool spaceLocationValid =
 		    //(spaceLocation[i].locationFlags &
 		    // XR_SPACE_LOCATION_POSITION_VALID_BIT) != 0 &&
-		    (spaceLocation[i].locationFlags &
+		    (self->spaceLocation[i].locationFlags &
 		     XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
 
 		godot_transform controller_transform;
@@ -1264,8 +1265,9 @@ update_controllers(OpenXRApi *self)
 			printf("Space location not valid for hand %d\n", i);
 			continue;
 		} else {
-			if (!_transform_from_rot_pos(&controller_transform,
-			                             &spaceLocation[i], 1.0)) {
+			if (!_transform_from_rot_pos(
+			        &controller_transform,
+			        &self->spaceLocation[i].pose, 1.0)) {
 				printf(
 				    "Pose for hand %d is active but invalid\n",
 				    i);
@@ -1596,26 +1598,108 @@ process_openxr(OpenXRApi *self)
 			               "failed to locate hand %d joints!", i))
 				break;
 
+			/*
 			if (self->joint_locations[i].isActive) {
-				printf("located hand %d joints ", i);
-				for (uint32_t j = 0;
-				     j < self->joint_locations[i].jointCount;
-				     j++) {
-					printf("(%4.2f %4.2f %4.2f )",
-					       self->joint_locations[i]
-					           .jointLocations[j]
-					           .pose.position.x,
-					       self->joint_locations[i]
-					           .jointLocations[j]
-					           .pose.position.y,
-					       self->joint_locations[i]
-					           .jointLocations[j]
-					           .pose.position.z);
-				}
-				printf("\n");
+			        printf("located hand %d joints ", i);
+			        for (uint32_t j = 0;
+			             j < self->joint_locations[i].jointCount;
+			             j++) {
+			                printf("(%4.2f %4.2f %4.2f )",
+			                       self->joint_locations[i]
+			                           .jointLocations[j]
+			                           .pose.position.x,
+			                       self->joint_locations[i]
+			                           .jointLocations[j]
+			                           .pose.position.y,
+			                       self->joint_locations[i]
+			                           .jointLocations[j]
+			                           .pose.position.z);
+			        }
+			        printf("\n");
 			} else {
-				printf("hand %d joints inactive\n", i);
+			        printf("hand %d joints inactive\n", i);
 			}
+			*/
 		}
 	}
+}
+
+
+// see GodotCalls.cpp for
+void *
+openxr_ext_constructor(godot_object *p_instance, void *p_method_data)
+{
+	return NULL;
+}
+
+void
+openxr_ext_destructor(godot_object *p_instance,
+                      void *p_method_data,
+                      void *p_user_data)
+{}
+
+static godot_variant
+nil()
+{
+	godot_variant variant;
+	api->godot_variant_new_nil(&variant);
+	return variant;
+}
+
+godot_variant
+openxr_ext_get_hand_tracking(godot_object *p_instance,
+                             void *p_method_data,
+                             void *p_user_data,
+                             int p_num_args,
+                             godot_variant **p_args)
+{
+
+	if (openxr_data_singleton == NULL) {
+		return nil();
+	}
+
+	openxr_data_struct *d = (openxr_data_struct *)openxr_data_singleton;
+	OpenXRApi *self = d->openxr_api;
+
+
+	int cid = api->godot_variant_as_int(p_args[0]) - 1;
+	int idx = api->godot_variant_as_int(p_args[1]);
+
+	printf("openxr get hand tracking %d %d %d\n", p_num_args, cid, idx);
+
+	if (!self->joint_locations[cid].isActive ||
+	    self->joint_locations[cid].jointLocations == NULL) {
+		return nil();
+	}
+
+	XrHandJointLocationEXT *l =
+	    &self->joint_locations[cid].jointLocations[idx];
+
+	XrPosef pose = l->pose;
+
+	godot_transform joint_transform_global;
+	if (!_transform_from_rot_pos(&joint_transform_global, &pose, 1.0)) {
+		printf("Pose for hand %d joint %d is active but invalid\n", cid,
+		       idx);
+		return nil();
+	}
+
+	// joint pose is global
+	// "subtract" global pose of controller to make joint pose relative to
+	// hand
+	godot_transform controller_transform_global;
+	if (!_transform_from_rot_pos(&controller_transform_global,
+	                             &self->spaceLocation[cid].pose, 1.0)) {
+		printf("Pose for hand %d is invalid\n", cid);
+		return nil();
+	}
+	godot_transform inv_controller_transform_global =
+	    api->godot_transform_inverse(&controller_transform_global);
+	godot_transform joint_transform_local =
+	    api->godot_transform_operator_multiply(
+	        &joint_transform_global, &inv_controller_transform_global);
+
+	godot_variant variant;
+	api->godot_variant_new_transform(&variant, &joint_transform_local);
+	return variant;
 }

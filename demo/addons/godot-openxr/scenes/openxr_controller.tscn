@@ -1,0 +1,4 @@
+[gd_scene format=2]
+
+[node name="OpenXRController" type="ARVRController"]
+controller_id = 32

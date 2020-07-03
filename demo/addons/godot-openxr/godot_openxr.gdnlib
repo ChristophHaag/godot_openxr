@@ -3,7 +3,7 @@
 singleton=true
 load_once=true
 symbol_prefix="godot_openxr_"
-reloadable=false
+reloadable=true
 
 [entry]
 
