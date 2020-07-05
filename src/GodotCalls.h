@@ -5,6 +5,10 @@
 #ifndef GODOT_CALLS_H
 #define GODOT_CALLS_H
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <stdint.h>
 
 #ifdef __cplusplus

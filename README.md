@@ -1,7 +1,6 @@
 # GDNative driver for OpenXR
 
-Versions
---------
+## Versions
 
 Requires Godot 3.1.
 
@@ -15,23 +14,63 @@ If godot engine is compiled with `target=debug` instead, you might get a (bogus)
 
 On the other hand the godot_openxr plugin can be compiled in debug mode without issues.
 
-Status
-------
+## Status
 
 * This plugin only supports Linux/X11.
 * HMD poses and HMD rendering work.
 * Controller/Actions are unimplemented.
 * The code structure could be improved.
 
-Building this module
---------------------
+## Building this module
 In order to compile this module you will have to clone the source code to disk. You will need a C/C++ compiler, python and scons installed. This is the same toolchain you will need in order to compile Godot from master. The documentation on Godot is a very good place to read up on this. It is too much information to duplicate here.
+You will also need cmake if you're compiling the OpenXR SDK loader
 
-This module presumes that the OpenXR headers openxr/openxr.h and openxr/openxr_platform.h are installed in a location where they can be included without setup, and that the OpenXR loader libopenxr_api.so can be linked without special setup, for example /usr/include/openxr/openxr.h and /usr/lib/libopenxr_api.so.
+### Godot headers
+Currently this project includes the godot_headers repository as a submodule.
+This requires no further compilation steps but if the `godot_headers` folder is missing or empty execute:
+```
+git submodule init
+git submodule update
+```
 
-TODO: add openxr loader and headers as a submodule
+(We may switch to godot-cpp in the near future)
 
-*Compiling*
+### Compiling the OpenXR SDK loader
+The OpenXR SDK is submoduled into this project and you will find the relevant files there.
+Make sure to run the following commands if the `OpenXR-SDK` folder is empty or does not exist:
+```
+git submodule init
+git submodule update
+```
+
+The SDK needs to compile a "loader" that we will link into our plugin so we need to do this first.
+The SDK uses CMake as the build tool so make sure you have that installed.
+
+You can find build instructions here: https://github.com/KhronosGroup/OpenXR-SDK#building
+
+Or follow the following per platform instructions:
+**linux**
+To be added
+
+**OSX**
+To be added
+
+**Windows**
+Open the Visual Studio command prompt and execute:
+```
+cd OpenXR-SDK
+mkdir build\win64
+cd build\win64
+cmake -G "NMake Makefiles" ../..
+nmake
+```
+
+**Preinstalled**
+Alternatively if you have the OpenXR SDK installed elsewhere you can add the following to the scons command below: `openxr_include_path=/path/to/include/files openxr_library_path=/path/to/library`
+
+For example: `openxr_include_path=/usr/include openxr_library_path=/usr/lib`
+
+### Compiling the plugin
 If everything is in place compiling should be pretty straight forward
 
 For Linux: ```scons platform=linux```

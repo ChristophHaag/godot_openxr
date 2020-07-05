@@ -63,7 +63,11 @@ openxr_get_data()
 
 #define XR_MND_BALL_ON_STICK_EXTENSION_NAME "TODO_BALL_ON_STICK"
 
-#define XR_USE_PLATFORM_XLIB
+#ifdef WIN32
+	#define XR_USE_PLATFORM_WIN32
+#else
+	#define XR_USE_PLATFORM_XLIB
+#endif
 #define XR_USE_GRAPHICS_API_OPENGL
 
 #include <inttypes.h>
@@ -73,13 +77,18 @@ openxr_get_data()
 #include <stdlib.h>
 #include <string.h>
 
-#define GL_GLEXT_PROTOTYPES 1
-#define GL3_PROTOTYPES 1
-#include <GL/gl.h>
-#include <GL/glext.h>
+#ifdef WIN32
+	#include <glad/glad.h>
+#else
+	// linux
+	#define GL_GLEXT_PROTOTYPES 1
+	#define GL3_PROTOTYPES 1
+	#include <GL/gl.h>
+	#include <GL/glext.h>
 
-#include <GL/glx.h>
-#include <X11/Xlib.h>
+	#include <GL/glx.h>
+	#include <X11/Xlib.h>
+#endif
 
 #include <gdnative/gdnative.h>
 #include <openxr/openxr.h>
@@ -100,7 +109,11 @@ struct _openxr_api_private
 	XrInstance instance;
 	XrSession session;
 	XrSpace local_space;
+#ifdef WIN32
+	XrGraphicsBindingOpenGLWin32KHR  graphics_binding_gl;
+#else
 	XrGraphicsBindingOpenGLXlibKHR graphics_binding_gl;
+#endif
 	XrSwapchainImageOpenGLKHR **images;
 	XrSwapchain *swapchains;
 	uint32_t view_count;
@@ -423,6 +436,13 @@ _check_graphics_requirements_gl(OpenXRApi *self, XrSystemId system_id)
 OpenXRApi *
 init_openxr()
 {
+#ifdef WIN32
+	if (!gladLoadGL()) {
+		printf("Failed to initialize GLAD\n");	
+		return NULL;
+	}
+#endif
+
 	OpenXRApi *self = malloc(sizeof(struct _openxr_api_private));
 
 	self->buffer_index = NULL;
