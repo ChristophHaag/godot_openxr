@@ -1677,13 +1677,18 @@ openxr_ext_get_hand_tracking(godot_object *p_instance,
 
 	XrPosef pose = l->pose;
 
-	godot_transform joint_transform_global;
+  godot_transform joint_transform_global;
 	if (!_transform_from_rot_pos(&joint_transform_global, &pose, 1.0)) {
 		printf("Pose for hand %d joint %d is active but invalid\n", cid,
 		       idx);
 		return nil();
 	}
 
+#if 1
+  godot_variant variant;
+  api->godot_variant_new_transform(&variant, &joint_transform_global);
+
+#else
 	// joint pose is global
 	// "subtract" global pose of controller to make joint pose relative to
 	// hand
@@ -1701,5 +1706,7 @@ openxr_ext_get_hand_tracking(godot_object *p_instance,
 
 	godot_variant variant;
 	api->godot_variant_new_transform(&variant, &joint_transform_local);
+#endif
+
 	return variant;
 }
