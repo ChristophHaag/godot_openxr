@@ -24,8 +24,7 @@ typedef union {
 	};
 
 	inline void
-	set(float p_x, float p_y)
-	{
+	set(float p_x, float p_y) {
 		x = p_x;
 		y = p_y;
 	};
@@ -43,8 +42,7 @@ typedef union {
 	};
 
 	inline void
-	set(float p_x, float p_y, float p_z)
-	{
+	set(float p_x, float p_y, float p_z) {
 		x = p_x;
 		y = p_y;
 		z = p_z;
@@ -78,10 +76,8 @@ extern const godot_gdnative_ext_nativescript_api_struct *nativescript_api;
 #ifdef __cplusplus
 extern "C" {
 #endif
-void GDN_EXPORT
-godot_openxr_gdnative_init(godot_gdnative_init_options *p_options);
-void GDN_EXPORT
-godot_openxr_gdnative_terminate(godot_gdnative_terminate_options *p_options);
+void GDN_EXPORT godot_openxr_gdnative_init(godot_gdnative_init_options *p_options);
+void GDN_EXPORT godot_openxr_gdnative_terminate(godot_gdnative_terminate_options *p_options);
 #ifdef __cplusplus
 }
 #endif

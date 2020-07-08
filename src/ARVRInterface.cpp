@@ -4,16 +4,13 @@
 #include "ARVRInterface.h"
 #include "xrmath.h"
 
-typedef struct arvr_data_struct
-{
+typedef struct arvr_data_struct {
 	openxr_data_struct *openxr_data;
 
 	bool has_external_texture_support;
 } arvr_data_struct;
 
-godot_string
-godot_arvr_get_name(const void *p_data)
-{
+godot_string godot_arvr_get_name(const void *p_data) {
 	godot_string ret;
 
 	char name[] = "OpenXR";
@@ -23,17 +20,13 @@ godot_arvr_get_name(const void *p_data)
 	return ret;
 }
 
-godot_int
-godot_arvr_get_capabilities(const void *p_data)
-{
+godot_int godot_arvr_get_capabilities(const void *p_data) {
 	godot_int ret;
 	ret = 2 + 8; // 2 = ARVR_STEREO, 8 = ARVR_EXTERNAL
 	return ret;
 };
 
-godot_bool
-godot_arvr_get_anchor_detection_is_enabled(const void *p_data)
-{
+godot_bool godot_arvr_get_anchor_detection_is_enabled(const void *p_data) {
 	godot_bool ret;
 
 	ret = false; // does not apply here
@@ -41,14 +34,11 @@ godot_arvr_get_anchor_detection_is_enabled(const void *p_data)
 	return ret;
 };
 
-void
-godot_arvr_set_anchor_detection_is_enabled(void *p_data, bool p_enable){
-    // we ignore this, not supported in this interface!
+void godot_arvr_set_anchor_detection_is_enabled(void *p_data, bool p_enable){
+	// we ignore this, not supported in this interface!
 };
 
-godot_bool
-godot_arvr_is_stereo(const void *p_data)
-{
+godot_bool godot_arvr_is_stereo(const void *p_data) {
 	godot_bool ret;
 
 	ret = true;
@@ -56,9 +46,7 @@ godot_arvr_is_stereo(const void *p_data)
 	return ret;
 };
 
-godot_bool
-godot_arvr_is_initialized(const void *p_data)
-{
+godot_bool godot_arvr_is_initialized(const void *p_data) {
 	godot_bool ret;
 	arvr_data_struct *arvr_data = (arvr_data_struct *)p_data;
 
@@ -67,9 +55,7 @@ godot_arvr_is_initialized(const void *p_data)
 	return ret;
 };
 
-godot_bool
-godot_arvr_initialize(void *p_data)
-{
+godot_bool godot_arvr_initialize(void *p_data) {
 	godot_bool ret;
 	arvr_data_struct *arvr_data = (arvr_data_struct *)p_data;
 
@@ -85,9 +71,7 @@ godot_arvr_initialize(void *p_data)
 	return ret;
 };
 
-void
-godot_arvr_uninitialize(void *p_data)
-{
+void godot_arvr_uninitialize(void *p_data) {
 	arvr_data_struct *arvr_data = (arvr_data_struct *)p_data;
 
 	if (arvr_data->openxr_data != NULL) {
@@ -106,9 +90,7 @@ godot_arvr_uninitialize(void *p_data)
 	};
 };
 
-godot_vector2
-godot_arvr_get_render_targetsize(const void *p_data)
-{
+godot_vector2 godot_arvr_get_render_targetsize(const void *p_data) {
 	arvr_data_struct *arvr_data = (arvr_data_struct *)p_data;
 	godot_vector2 size;
 
@@ -116,7 +98,7 @@ godot_arvr_get_render_targetsize(const void *p_data)
 		uint32_t width, height;
 
 		recommended_rendertarget_size(
-		    arvr_data->openxr_data->openxr_api, &width, &height);
+				arvr_data->openxr_data->openxr_api, &width, &height);
 		// printf("Render Target size %dx%d\n", width, height);
 
 		api->godot_vector2_new(&size, width, height);
@@ -127,15 +109,13 @@ godot_arvr_get_render_targetsize(const void *p_data)
 	return size;
 };
 
-godot_transform
-godot_arvr_get_transform_for_eye(void *p_data,
-                                 godot_int p_eye,
-                                 godot_transform *p_cam_transform)
-{
+godot_transform godot_arvr_get_transform_for_eye(void *p_data,
+		godot_int p_eye,
+		godot_transform *p_cam_transform) {
 	arvr_data_struct *arvr_data = (arvr_data_struct *)p_data;
 	godot_transform transform_for_eye;
 	godot_transform reference_frame =
-	    arvr_api->godot_arvr_get_reference_frame();
+			arvr_api->godot_arvr_get_reference_frame();
 	godot_transform ret;
 	godot_vector3 offset;
 	godot_real world_scale = arvr_api->godot_arvr_get_worldscale();
@@ -147,10 +127,10 @@ godot_arvr_get_transform_for_eye(void *p_data,
 		// printf("Get view matrix for eye %d\n", p_eye);
 		if (p_eye == 1) {
 			get_view_matrix(arvr_data->openxr_data->openxr_api, 0,
-			                world_scale, &transform_for_eye);
+					world_scale, &transform_for_eye);
 		} else if (p_eye == 2) {
 			get_view_matrix(arvr_data->openxr_data->openxr_api, 1,
-			                world_scale, &transform_for_eye);
+					world_scale, &transform_for_eye);
 		} else {
 			// 'mono' will be requested purely for scene positioning
 			// feedback, no longer used by renderer hopefully this
@@ -168,26 +148,24 @@ godot_arvr_get_transform_for_eye(void *p_data,
 	return ret;
 };
 
-void
-godot_arvr_fill_projection_for_eye(void *p_data,
-                                   godot_real *p_projection,
-                                   godot_int p_eye,
-                                   godot_real p_aspect,
-                                   godot_real p_z_near,
-                                   godot_real p_z_far)
-{
+void godot_arvr_fill_projection_for_eye(void *p_data,
+		godot_real *p_projection,
+		godot_int p_eye,
+		godot_real p_aspect,
+		godot_real p_z_near,
+		godot_real p_z_far) {
 	arvr_data_struct *arvr_data = (arvr_data_struct *)p_data;
 
 	if (arvr_data->openxr_data != NULL) {
 		// printf("fill projection for eye %d\n", p_eye);
 		if (p_eye == 1)
 			fill_projection_matrix(
-			    arvr_data->openxr_data->openxr_api, 0, p_z_near,
-			    p_z_far, p_projection);
+					arvr_data->openxr_data->openxr_api, 0, p_z_near,
+					p_z_far, p_projection);
 		else
 			fill_projection_matrix(
-			    arvr_data->openxr_data->openxr_api, 1, p_z_near,
-			    p_z_far, p_projection);
+					arvr_data->openxr_data->openxr_api, 1, p_z_near,
+					p_z_far, p_projection);
 		// ???
 
 		// printf("\n");
@@ -196,12 +174,10 @@ godot_arvr_fill_projection_for_eye(void *p_data,
 	};
 };
 
-void
-godot_arvr_commit_for_eye(void *p_data,
-                          godot_int p_eye,
-                          godot_rid *p_render_target,
-                          godot_rect2 *p_screen_rect)
-{
+void godot_arvr_commit_for_eye(void *p_data,
+		godot_int p_eye,
+		godot_rid *p_render_target,
+		godot_rect2 *p_screen_rect) {
 	arvr_data_struct *arvr_data = (arvr_data_struct *)p_data;
 	// printf("Commit eye %d\n", p_eye);
 
@@ -221,21 +197,21 @@ godot_arvr_commit_for_eye(void *p_data,
 		// blit as mono, attempt to keep our aspect ratio and center our
 		// render buffer
 		godot_vector2 render_size =
-		    godot_arvr_get_render_targetsize(p_data);
+				godot_arvr_get_render_targetsize(p_data);
 		// printf("Rendersize = %fx%f\n", render_size.x, render_size.y);
 
 		float new_height =
-		    screen_rect.size.x * (render_size.y / render_size.x);
+				screen_rect.size.x * (render_size.y / render_size.x);
 		if (new_height > screen_rect.size.y) {
 			screen_rect.position.y =
-			    (0.5 * screen_rect.size.y) - (0.5 * new_height);
+					(0.5 * screen_rect.size.y) - (0.5 * new_height);
 			screen_rect.size.y = new_height;
 		} else {
 			float new_width = screen_rect.size.y *
-			                  (render_size.x / render_size.y);
+							  (render_size.x / render_size.y);
 
 			screen_rect.position.x =
-			    (0.5 * screen_rect.size.x) - (0.5 * new_width);
+					(0.5 * screen_rect.size.x) - (0.5 * new_width);
 			screen_rect.size.x = new_width;
 		};
 
@@ -248,15 +224,13 @@ godot_arvr_commit_for_eye(void *p_data,
 
 	if (arvr_data->openxr_data != NULL) {
 		uint32_t texid =
-		    arvr_api->godot_arvr_get_texid(p_render_target);
+				arvr_api->godot_arvr_get_texid(p_render_target);
 		render_openxr(arvr_data->openxr_data->openxr_api, p_eye - 1,
-		              texid, arvr_data->has_external_texture_support);
+				texid, arvr_data->has_external_texture_support);
 	};
 };
 
-void
-godot_arvr_process(void *p_data)
-{
+void godot_arvr_process(void *p_data) {
 	arvr_data_struct *arvr_data = (arvr_data_struct *)p_data;
 
 	// this method gets called before every frame is rendered, here is where
@@ -266,22 +240,18 @@ godot_arvr_process(void *p_data)
 	}
 };
 
-void *
-godot_arvr_constructor(godot_object *p_instance)
-{
+void *godot_arvr_constructor(godot_object *p_instance) {
 	godot_string ret;
 
 	arvr_data_struct *arvr_data =
-	    (arvr_data_struct *)api->godot_alloc(sizeof(arvr_data_struct));
+			(arvr_data_struct *)api->godot_alloc(sizeof(arvr_data_struct));
 	arvr_data->openxr_data = NULL;
 	// api->godot_transform_new_identity(&arvr_data->hmd_transform);
 
 	return arvr_data;
 }
 
-void
-godot_arvr_destructor(void *p_data)
-{
+void godot_arvr_destructor(void *p_data) {
 	if (p_data != NULL) {
 		arvr_data_struct *arvr_data = (arvr_data_struct *)p_data;
 		if (arvr_data->openxr_data != NULL) {
@@ -294,33 +264,30 @@ godot_arvr_destructor(void *p_data)
 	};
 }
 
-int
-godot_arvr_get_external_texture_for_eye(void *p_data, int p_eye)
-{
+int godot_arvr_get_external_texture_for_eye(void *p_data, int p_eye) {
 	arvr_data_struct *arvr_data = (arvr_data_struct *)p_data;
 
 	// this only gets called from Godot 3.2 and newer, allows us to use
 	// OpenXR swapchain directly.
 
 	return get_external_texture_for_eye(
-	    arvr_data->openxr_data->openxr_api, p_eye - 1,
-	    &arvr_data->has_external_texture_support);
+			arvr_data->openxr_data->openxr_api, p_eye - 1,
+			&arvr_data->has_external_texture_support);
 }
 
-void
-godot_arvr_notification(void *p_data, int p_what)
-{
+void godot_arvr_notification(void *p_data, int p_what) {
 	// nothing to do here for now but we should implement this.
 }
 
 const godot_arvr_interface_gdnative interface_struct = {
-    GODOTVR_API_MAJOR, GODOTVR_API_MINOR, godot_arvr_constructor,
-    godot_arvr_destructor, godot_arvr_get_name, godot_arvr_get_capabilities,
-    godot_arvr_get_anchor_detection_is_enabled,
-    godot_arvr_set_anchor_detection_is_enabled, godot_arvr_is_stereo,
-    godot_arvr_is_initialized, godot_arvr_initialize, godot_arvr_uninitialize,
-    godot_arvr_get_render_targetsize, godot_arvr_get_transform_for_eye,
-    godot_arvr_fill_projection_for_eye, godot_arvr_commit_for_eye,
-    godot_arvr_process,
-    // only available in Godot 3.2+
-    godot_arvr_get_external_texture_for_eye, godot_arvr_notification};
+	GODOTVR_API_MAJOR, GODOTVR_API_MINOR, godot_arvr_constructor,
+	godot_arvr_destructor, godot_arvr_get_name, godot_arvr_get_capabilities,
+	godot_arvr_get_anchor_detection_is_enabled,
+	godot_arvr_set_anchor_detection_is_enabled, godot_arvr_is_stereo,
+	godot_arvr_is_initialized, godot_arvr_initialize, godot_arvr_uninitialize,
+	godot_arvr_get_render_targetsize, godot_arvr_get_transform_for_eye,
+	godot_arvr_fill_projection_for_eye, godot_arvr_commit_for_eye,
+	godot_arvr_process,
+	// only available in Godot 3.2+
+	godot_arvr_get_external_texture_for_eye, godot_arvr_notification
+};
