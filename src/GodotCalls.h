@@ -14,7 +14,7 @@
 #ifdef __cplusplus
 // fully define these, don't waste time with needless callbacks for access
 #define GODOT_CORE_API_GODOT_VECTOR2_TYPE_DEFINED
-typedef union {
+typedef union godot_vector2 {
 	// Force struct to be classified as INTEGER by System V AMD64 ABI.
 	uint8_t _dont_touch_that[8];
 	struct
@@ -31,7 +31,7 @@ typedef union {
 } godot_vector2;
 
 #define GODOT_CORE_API_GODOT_VECTOR3_TYPE_DEFINED
-typedef union {
+typedef union godot_vector3 {
 	// Force struct to be classified as INTEGER by System V AMD64 ABI.
 	uint8_t _dont_touch_that[12];
 	struct
@@ -50,7 +50,7 @@ typedef union {
 } godot_vector3;
 
 #define GODOT_CORE_API_GODOT_RECT2_TYPE_DEFINED
-typedef union {
+typedef union godot_rect2 {
 	// Force struct to be classified as INTEGER by System V AMD64 ABI.
 	uint8_t _dont_touch_that[16];
 	struct
