@@ -343,8 +343,15 @@ OpenXRApi::OpenXRApi() {
 		return;
 	}
 
-	if (!isExtensionSupported(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME, extensionProperties, extensionCount)) {
-		Godot::print_error("OpenXR Runtime does not support OpenGL extension!", __FUNCTION__, __FILE__, __LINE__);
+	const char *xr_gl_ext = NULL;
+
+#ifdef __ANDROID__
+	xr_gl_ext = XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME;
+#else
+	xr_gl_ext = XR_KHR_OPENGL_ENABLE_EXTENSION_NAME;
+#endif
+	if (!isExtensionSupported(xr_gl_ext, extensionProperties, extensionCount)) {
+		Godot::print_error("OpenXR Runtime does not support GL extension!", __FUNCTION__, __FILE__, __LINE__);
 		free(extensionProperties);
 		return;
 	}
@@ -364,7 +371,7 @@ OpenXRApi::OpenXRApi() {
 	}
 
 	uint32_t enabledExtensionCount = 0;
-	enabledExtensions[enabledExtensionCount++] = XR_KHR_OPENGL_ENABLE_EXTENSION_NAME;
+	enabledExtensions[enabledExtensionCount++] = xr_gl_ext;
 	if (isExtensionSupported(XR_EXT_HAND_TRACKING_EXTENSION_NAME, extensionProperties, extensionCount)) {
 		enabledExtensions[enabledExtensionCount++] = XR_EXT_HAND_TRACKING_EXTENSION_NAME;
 		hand_tracking_ext_supported = true;
@@ -491,8 +498,9 @@ OpenXRApi::OpenXRApi() {
 		Godot::print_error("OpenXR Windows native handle API is missing, please use a newer version of Godot!", __FUNCTION__, __FILE__, __LINE__);
 		return;
 	}
+#endif
 
-#else
+#if defined(__linux__) && !defined(__ANDROID__)
 	graphics_binding_gl = (XrGraphicsBindingOpenGLXlibKHR){
 		.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR,
 		.next = NULL,
@@ -529,8 +537,18 @@ OpenXRApi::OpenXRApi() {
 			(uintptr_t)graphics_binding_gl.glxDrawable);
 #endif
 
+#ifdef __ANDROID__
+	graphics_binding_gl = (XrGraphicsBindingOpenGLESAndroidKHR){
+		.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR,
+		.next = NULL,
+	};
+	//! @todo fill graphics binding
+#endif
+
+#ifndef __ANDROID__
 	Godot::print("OpenXR Using OpenGL version: {0}", (char *)glGetString(GL_VERSION));
 	Godot::print("OpenXR Using OpenGL renderer: {0}", (char *)glGetString(GL_RENDERER));
+#endif
 
 	XrSessionCreateInfo session_create_info = {
 		.type = XR_TYPE_SESSION_CREATE_INFO,
@@ -640,7 +658,9 @@ OpenXRApi::OpenXRApi() {
 			swapchainFormatToUse = swapchainFormats[i];
 			Godot::print("OpenXR Using RGBA swapchain.");
 		}
-#else
+#endif
+
+#if defined(__linux__) && !defined(__ANDROID__)
 		if (swapchainFormats[i] == GL_SRGB8_ALPHA8_EXT) {
 			swapchainFormatToUse = swapchainFormats[i];
 			Godot::print("OpenXR Using SRGB swapchain.");
@@ -649,6 +669,11 @@ OpenXRApi::OpenXRApi() {
 			swapchainFormatToUse = swapchainFormats[i];
 			Godot::print("OpenXR Using RGBA swapchain.");
 		}
+#endif
+
+#ifdef __ANDROID__
+		//! @todo choose swapchain format for android
+        swapchainFormatToUse = swapchainFormats[0];
 #endif
 	}
 
@@ -695,6 +720,17 @@ OpenXRApi::OpenXRApi() {
 		}
 	}
 
+#ifdef __ANDROID__
+    images = (XrSwapchainImageOpenGLESKHR **)malloc(sizeof(XrSwapchainImageOpenGLESKHR **) * view_count);
+	for (uint32_t i = 0; i < view_count; i++) {
+		images[i] = (XrSwapchainImageOpenGLESKHR *)malloc(sizeof(XrSwapchainImageOpenGLESKHR) * swapchainLength[i]);
+
+		for (int j = 0; j < swapchainLength[i]; j++) {
+			images[i][j].type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_ES_KHR;
+			images[i][j].next = NULL;
+		}
+	}
+#else
 	images = (XrSwapchainImageOpenGLKHR **)malloc(sizeof(XrSwapchainImageOpenGLKHR **) * view_count);
 	for (uint32_t i = 0; i < view_count; i++) {
 		images[i] = (XrSwapchainImageOpenGLKHR *)malloc(sizeof(XrSwapchainImageOpenGLKHR) * swapchainLength[i]);
@@ -704,6 +740,7 @@ OpenXRApi::OpenXRApi() {
 			images[i][j].next = NULL;
 		}
 	}
+#endif
 
 	for (uint32_t i = 0; i < view_count; i++) {
 		result = xrEnumerateSwapchainImages(swapchains[i], swapchainLength[i], &swapchainLength[i], (XrSwapchainImageBaseHeader *)images[i]);
@@ -1051,6 +1088,32 @@ bool OpenXRApi::suggestActions(const char *interaction_profile, XrAction *action
 }
 
 bool OpenXRApi::check_graphics_requirements_gl(XrSystemId system_id) {
+#ifdef __ANDROID__
+    XrGraphicsRequirementsOpenGLESKHR opengl_reqs = {
+            .type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_ES_KHR, .next = NULL
+    };
+
+    PFN_xrGetOpenGLESGraphicsRequirementsKHR pfnGetOpenGLGraphicsRequirementsKHR = NULL;
+    XrResult result = xrGetInstanceProcAddr(instance, "xrGetOpenGLESGraphicsRequirementsKHR", (PFN_xrVoidFunction *)&pfnGetOpenGLGraphicsRequirementsKHR);
+
+    if (!xr_result(result, "Failed to get xrGetOpenGLESGraphicsRequirementsKHR fp!")) {
+        return false;
+    }
+
+    result = pfnGetOpenGLGraphicsRequirementsKHR(instance, system_id, &opengl_reqs);
+    if (!xr_result(result, "Failed to get OpenGL graphics requirements!")) {
+        return false;
+    }
+
+    XrVersion desired_opengl_version = XR_MAKE_VERSION(3, 3, 0);
+    if (desired_opengl_version > opengl_reqs.maxApiVersionSupported || desired_opengl_version < opengl_reqs.minApiVersionSupported) {
+        Godot::print(
+                "OpenXR Runtime only supports OpenGL version {0}.{1} - {2}.{3}!", XR_VERSION_MAJOR(opengl_reqs.minApiVersionSupported), XR_VERSION_MINOR(opengl_reqs.minApiVersionSupported), XR_VERSION_MAJOR(opengl_reqs.maxApiVersionSupported), XR_VERSION_MINOR(opengl_reqs.maxApiVersionSupported));
+        // it might still work
+        return true;
+    }
+    return true;
+#else
 	XrGraphicsRequirementsOpenGLKHR opengl_reqs = {
 		.type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR, .next = NULL
 	};
@@ -1075,6 +1138,7 @@ bool OpenXRApi::check_graphics_requirements_gl(XrSystemId system_id) {
 		return true;
 	}
 	return true;
+#endif
 }
 
 XrResult OpenXRApi::acquire_image(int eye) {
@@ -1146,6 +1210,7 @@ void OpenXRApi::render_openxr(int eye, uint32_t texid, bool has_external_texture
 		return;
 	}
 
+#ifndef __ANDROID__
 	if (!has_external_texture_support) {
 		result = acquire_image(eye);
 		if (!xr_result(result, "failed to acquire swapchain image!")) {
@@ -1168,6 +1233,11 @@ void OpenXRApi::render_openxr(int eye, uint32_t texid, bool has_external_texture
 	} else {
 		// printf("Godot already rendered into our textures\n");
 	}
+#else
+    if (!has_external_texture_support) {
+	    //error
+	}
+#endif
 
 	XrSwapchainImageReleaseInfo swapchainImageReleaseInfo = {
 		.type = XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO,

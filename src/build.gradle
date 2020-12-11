@@ -1,0 +1,66 @@
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+
+android {
+    buildToolsVersion = '30.0.1'
+    compileSdkVersion 30
+    ndkVersion "21.3.6528147"
+
+    // enable prefab support for the AAR
+    buildFeatures {
+        prefab true
+    }
+
+    defaultConfig {
+        minSdkVersion 30
+        targetSdkVersion 30
+        versionCode 4
+        versionName '3.0.0'
+        setProperty("archivesBaseName", "gdopenxrmobile.${versionName}")
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++14"
+
+                // TODO https://github.com/google/oboe/issues/812#issuecomment-604546651
+                arguments "-DANDROID_STL=c++_shared", "-DCMAKE_VERBOSE_MAKEFILE=1"
+            }
+        }
+
+        ndk {
+            abiFilters "arm64-v8a", "armeabi-v7a"
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    buildFeatures {
+        prefabPublishing true
+    }
+
+    prefab {
+        godot_openxrmobile {
+        }
+    }
+}
+
+dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:$versions.kotlinVersion")
+
+    implementation 'org.khronos.openxr:openxr_loader_for_android:1.0.13-beta-1'
+
+    if (rootProject.findProject(":godot:lib") != null) {
+        compileOnly(project(":godot:lib"))
+    } else {
+        compileOnly(fileTree(dir: "libs", include: ["godot-lib*.aar"]))
+    }
+}
