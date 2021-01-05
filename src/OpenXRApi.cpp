@@ -538,11 +538,16 @@ OpenXRApi::OpenXRApi() {
 #endif
 
 #ifdef __ANDROID__
+	//! @todo get from engine
+	EGLContext ctx = eglGetCurrentContext();
+	EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 	graphics_binding_gl = (XrGraphicsBindingOpenGLESAndroidKHR){
-		.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR,
-		.next = NULL,
+			.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR,
+			.next = NULL,
+			.display = dpy,
+			.context = ctx,
+			.config = NULL, //! @todo?
 	};
-	//! @todo fill graphics binding
 #endif
 
 #ifndef __ANDROID__
