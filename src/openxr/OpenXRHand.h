@@ -14,7 +14,7 @@ class OpenXRHand : public Spatial {
 
 private:
 	OpenXRApi *openxr_api;
-	OpenXRApi::Hands hand;
+	int hand;
 
 	Spatial *joints[XR_HAND_JOINT_COUNT_EXT];
 

@@ -11,7 +11,7 @@ namespace godot {
 class OpenXRPose : public Spatial {
 	GODOT_CLASS(OpenXRPose, Spatial)
 
-	// For now hardcoded enums but this may need to become string based, we'll see.
+	// For now hardcoded enums but this needs to become string based.
 	enum Poses {
 		POSE_LEFT_HAND,
 		POSE_RIGHT_HAND,

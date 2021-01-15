@@ -41,17 +41,19 @@ void OpenXRPose::_init() {
 void OpenXRPose::_physics_process(float delta) {
 	if (openxr_api == NULL) {
 		return;
+	} else if (!openxr_api->is_initialised()) {
+		return;
 	}
 
 	const float ws = ARVRServer::get_singleton()->get_world_scale();
 	switch (pose) {
 		case POSE_LEFT_HAND: {
-			const HandTracker *hand_tracker = openxr_api->get_hand_tracker(OpenXRApi::HAND_LEFT);
+			const HandTracker *hand_tracker = openxr_api->get_hand_tracker(0);
 			const XrPosef &pose = hand_tracker->joint_locations[XR_HAND_JOINT_PALM_EXT].pose;
 			set_transform(openxr_api->transform_from_pose(pose, ws));
 		}; break;
 		case POSE_RIGHT_HAND: {
-			const HandTracker *hand_tracker = openxr_api->get_hand_tracker(OpenXRApi::HAND_RIGHT);
+			const HandTracker *hand_tracker = openxr_api->get_hand_tracker(1);
 			const XrPosef &pose = hand_tracker->joint_locations[XR_HAND_JOINT_PALM_EXT].pose;
 			set_transform(openxr_api->transform_from_pose(pose, ws));
 		}; break;
