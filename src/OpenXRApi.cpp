@@ -542,11 +542,11 @@ OpenXRApi::OpenXRApi() {
 	EGLContext ctx = eglGetCurrentContext();
 	EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 	graphics_binding_gl = (XrGraphicsBindingOpenGLESAndroidKHR){
-			.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR,
-			.next = NULL,
-			.display = dpy,
-			.context = ctx,
-			.config = NULL, //! @todo?
+		.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR,
+		.next = NULL,
+		.display = dpy,
+		.context = ctx,
+		.config = NULL, //! @todo?
 	};
 #endif
 
@@ -678,7 +678,7 @@ OpenXRApi::OpenXRApi() {
 
 #ifdef __ANDROID__
 		//! @todo choose swapchain format for android
-        swapchainFormatToUse = swapchainFormats[0];
+		swapchainFormatToUse = swapchainFormats[0];
 #endif
 	}
 
@@ -726,7 +726,7 @@ OpenXRApi::OpenXRApi() {
 	}
 
 #ifdef __ANDROID__
-    images = (XrSwapchainImageOpenGLESKHR **)malloc(sizeof(XrSwapchainImageOpenGLESKHR **) * view_count);
+	images = (XrSwapchainImageOpenGLESKHR **)malloc(sizeof(XrSwapchainImageOpenGLESKHR **) * view_count);
 	for (uint32_t i = 0; i < view_count; i++) {
 		images[i] = (XrSwapchainImageOpenGLESKHR *)malloc(sizeof(XrSwapchainImageOpenGLESKHR) * swapchainLength[i]);
 
@@ -1094,30 +1094,30 @@ bool OpenXRApi::suggestActions(const char *interaction_profile, XrAction *action
 
 bool OpenXRApi::check_graphics_requirements_gl(XrSystemId system_id) {
 #ifdef __ANDROID__
-    XrGraphicsRequirementsOpenGLESKHR opengl_reqs = {
-            .type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_ES_KHR, .next = NULL
-    };
+	XrGraphicsRequirementsOpenGLESKHR opengl_reqs = {
+		.type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_ES_KHR, .next = NULL
+	};
 
-    PFN_xrGetOpenGLESGraphicsRequirementsKHR pfnGetOpenGLGraphicsRequirementsKHR = NULL;
-    XrResult result = xrGetInstanceProcAddr(instance, "xrGetOpenGLESGraphicsRequirementsKHR", (PFN_xrVoidFunction *)&pfnGetOpenGLGraphicsRequirementsKHR);
+	PFN_xrGetOpenGLESGraphicsRequirementsKHR pfnGetOpenGLGraphicsRequirementsKHR = NULL;
+	XrResult result = xrGetInstanceProcAddr(instance, "xrGetOpenGLESGraphicsRequirementsKHR", (PFN_xrVoidFunction *)&pfnGetOpenGLGraphicsRequirementsKHR);
 
-    if (!xr_result(result, "Failed to get xrGetOpenGLESGraphicsRequirementsKHR fp!")) {
-        return false;
-    }
+	if (!xr_result(result, "Failed to get xrGetOpenGLESGraphicsRequirementsKHR fp!")) {
+		return false;
+	}
 
-    result = pfnGetOpenGLGraphicsRequirementsKHR(instance, system_id, &opengl_reqs);
-    if (!xr_result(result, "Failed to get OpenGL graphics requirements!")) {
-        return false;
-    }
+	result = pfnGetOpenGLGraphicsRequirementsKHR(instance, system_id, &opengl_reqs);
+	if (!xr_result(result, "Failed to get OpenGL graphics requirements!")) {
+		return false;
+	}
 
-    XrVersion desired_opengl_version = XR_MAKE_VERSION(3, 3, 0);
-    if (desired_opengl_version > opengl_reqs.maxApiVersionSupported || desired_opengl_version < opengl_reqs.minApiVersionSupported) {
-        Godot::print(
-                "OpenXR Runtime only supports OpenGL version {0}.{1} - {2}.{3}!", XR_VERSION_MAJOR(opengl_reqs.minApiVersionSupported), XR_VERSION_MINOR(opengl_reqs.minApiVersionSupported), XR_VERSION_MAJOR(opengl_reqs.maxApiVersionSupported), XR_VERSION_MINOR(opengl_reqs.maxApiVersionSupported));
-        // it might still work
-        return true;
-    }
-    return true;
+	XrVersion desired_opengl_version = XR_MAKE_VERSION(3, 3, 0);
+	if (desired_opengl_version > opengl_reqs.maxApiVersionSupported || desired_opengl_version < opengl_reqs.minApiVersionSupported) {
+		Godot::print(
+				"OpenXR Runtime only supports OpenGL version {0}.{1} - {2}.{3}!", XR_VERSION_MAJOR(opengl_reqs.minApiVersionSupported), XR_VERSION_MINOR(opengl_reqs.minApiVersionSupported), XR_VERSION_MAJOR(opengl_reqs.maxApiVersionSupported), XR_VERSION_MINOR(opengl_reqs.maxApiVersionSupported));
+		// it might still work
+		return true;
+	}
+	return true;
 #else
 	XrGraphicsRequirementsOpenGLKHR opengl_reqs = {
 		.type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR, .next = NULL
@@ -1239,8 +1239,8 @@ void OpenXRApi::render_openxr(int eye, uint32_t texid, bool has_external_texture
 		// printf("Godot already rendered into our textures\n");
 	}
 #else
-    if (!has_external_texture_support) {
-	    //error
+	if (!has_external_texture_support) {
+		//error
 	}
 #endif
 
