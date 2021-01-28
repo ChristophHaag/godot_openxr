@@ -51,6 +51,15 @@ android {
         godot_openxrmobile {
         }
     }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['java']
+            res.srcDirs = ['res']
+        }
+    }
+
 }
 
 dependencies {
