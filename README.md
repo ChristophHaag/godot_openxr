@@ -86,6 +86,17 @@ apt install clang
 scons platform=linux use_llvm=yes
 ```
 
+### Android
+
+The godot-cpp bindings do have to be generated manually:
+
+```
+cd godot-cpp
+scons platform=linux generate_bindings=yes -j32
+```
+
+Then open the project in android-studio and click compile. Good luck.
+
 ## Debugging
 
 If you want to debug the module make sure you use a copy of the godot binary build with either `target=release_debug` or `target=debug` provided to scons and that you build the plugin using `target=debug`. This will ensure debugging symbol files are created.
