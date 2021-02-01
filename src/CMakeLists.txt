@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 
+# TODO: Why do we need this?
+SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS true)
 
 # TODO
 MESSAGE("ROOT PATH ${CMAKE_FIND_ROOT_PATH}")
@@ -9,8 +11,8 @@ if (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "armeabi-v7a")
 elseif (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "arm64-v8a")
     set(CMAKE_MODULE_PATH ${CMAKE_FIND_ROOT_PATH}/lib/aarch64-linux-android/cmake/OpenXR/)
 endif()
-#find_package(OpenXR REQUIRED PATHS ${CMAKE_MODULE_PATH})
 
+#find_package(OpenXR REQUIRED PATHS ${CMAKE_MODULE_PATH})
 include(${CMAKE_MODULE_PATH}/OpenXR-config.cmake)
 
 # Default android abi is arm64-v8a
@@ -38,7 +40,9 @@ endif (CMAKE_BUILD_TYPE MATCHES Debug)
 
 if (NOT (ANDROID_STL STREQUAL "c++_shared"))
     set(ANDROID_STL "c++_shared")
+    MESSAGE("Setting ANDROID_STL to c++_shared")
 endif (NOT (ANDROID_STL STREQUAL "c++_shared"))
+MESSAGE("Using ANDROID_STL: ${ANDROID_STL}")
 
 # Check if ANDROID_NDK is set.
 if (NOT ANDROID_NDK)
@@ -53,13 +57,15 @@ endif (NOT ANDROID_NDK)
 # Check if CMAKE_TOOLCHAIN_FILE is set.
 if (NOT CMAKE_TOOLCHAIN_FILE)
     set(CMAKE_TOOLCHAIN_FILE "${ANDROID_NDK}/build/cmake/android.toolchain.cmake")
+    MESSAGE("Setting cmake toolchain file to ${CMAKE_TOOLCHAIN_FILE}")
 endif (NOT CMAKE_TOOLCHAIN_FILE)
+MESSAGE("Using cmake toolchain ${CMAKE_TOOLCHAIN_FILE}")
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+#set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_EXTENSIONS OFF)
 
-project(godot_openxrmobile VERSION 2.0.0)
+project(godot_openxrmobile VERSION 1.0.0 LANGUAGES C CXX)
 
 ###############################################################################
 ## PROJECT SETUP
@@ -88,6 +94,8 @@ set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wuninitialized -Wunknown-pragma
 set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wunused-value -Wvariadic-macros -Wvolatile-register-var -Wno-error=attributes")
 set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -fno-omit-frame-pointer -O0")
 
+MESSAGE("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
     set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wno-ignored-attributes")
 endif ()
@@ -100,7 +108,7 @@ endif (CMAKE_BUILD_TYPE MATCHES Debug)
 
 ## OpenXR library
 # !!! TODO
-add_library(openxr_loader SHARED IMPORTED GLOBAL)
+#add_library(openxr_loader SHARED IMPORTED GLOBAL)
 
 ## godot-cpp library
 set(GODOT-CPP "godot-cpp")
@@ -108,23 +116,23 @@ set(GODOT-CPP "godot-cpp")
 file(GLOB_RECURSE GODOT_CPP_SOURCES ${GODOT_CPP_DIR}/src/*.c**)
 file(GLOB_RECURSE GODOT_CPP_HEADERS ${GODOT_CPP_DIR}/include/*.h**)
 
-MESSAGE("!! ${GODOT_CPP_DIR}/src/*.c** CPP SOURCES ${GODOT_CPP_SOURCES}")
+MESSAGE("!! CPP SOURCES ${GODOT_CPP_SOURCES}")
 MESSAGE("!! CPP HEADERS ${GODOT_CPP_HEADERS}")
 
 add_library(${GODOT-CPP}
-        STATIC
+        SHARED
         ${GODOT_CPP_SOURCES} ${GODOT_CPP_HEADERS})
 
 target_include_directories(${GODOT-CPP}
-        PUBLIC
+        PRIVATE
         ${GODOT_CPP_DIR}/include
         ${GODOT_CPP_DIR}/include/core
         ${GODOT_CPP_DIR}/include/gen
         )
 
-# Put godot headers as SYSTEM PUBLIC to exclude warnings from irrelevant headers
+# Put godot headers as SYSTEM to exclude warnings from irrelevant headers
 target_include_directories(${GODOT-CPP}
-        SYSTEM PUBLIC
+        SYSTEM PRIVATE
         ${GODOT_HEADERS_DIR}
         )
 
@@ -140,13 +148,10 @@ file(GLOB_RECURSE HEADERS *.h**)
 MESSAGE("!! SOURCES ${SOURCES}")
 MESSAGE("!! HEADERS ${HEADERS}")
 
-add_library(${PROJECT_NAME}
-        STATIC
-        ${SOURCES} ${HEADERS} OpenXR::openxr_loader)
+add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
 target_include_directories(${PROJECT_NAME}
         PRIVATE
-        src/main/cpp
         ${GODOT_CPP_DIR}/src
         ${GODOT_CPP_DIR}/src/core
         ${GODOT_CPP_DIR}/src/gen
@@ -155,9 +160,9 @@ target_include_directories(${PROJECT_NAME}
         ${GODOT_CPP_DIR}/include/gen
         )
 
-# Put godot headers as SYSTEM PUBLIC to exclude warnings from irrelevant headers
+# Put godot headers as SYSTEM to exclude warnings from irrelevant headers
 target_include_directories(${PROJECT_NAME}
-        SYSTEM PUBLIC
+        SYSTEM PRIVATE
         ${GODOT_HEADERS_DIR}
         ${OPENXR_HEADERS_DIR}
         )
@@ -174,7 +179,6 @@ target_link_libraries(${PROJECT_NAME}
 set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS ${GODOT_COMPILE_FLAGS})
 set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS ${GODOT_LINKER_FLAGS})
 
-# TODO: made static library
 get_target_property(OPENXR_LIB_PATH OpenXR::openxr_loader IMPORTED_LOCATION)
 # Copy the OpenXR shared library to the output directory.
 add_custom_command(OUTPUT OpenXR::openxr_loader
