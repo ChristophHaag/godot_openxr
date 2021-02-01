@@ -66,17 +66,10 @@ project(godot_openxrmobile VERSION 2.0.0)
 ## The variables below should be updated based on the setup instructions
 ## in the project README.
 
-# Sets the path to the OpenXR containing directory. Update this variable if the api is in another location.
-# !!! TODO
-set(OPENXR_ROOT_DIR "${PROJECT_SOURCE_DIR}/openxr_loader_android")
-
 # Location to the Godot headers directory.
 set(GODOT_CPP_DIR "${PROJECT_SOURCE_DIR}/../godot-cpp")
 set(GODOT_HEADERS_DIR "${GODOT_CPP_DIR}/godot_headers")
 ###############################################################################
-
-# !!! TODO
-set(OPENXR_HEADERS_DIR "${OPENXR_ROOT_DIR}/include" CACHE STRING "")
 
 set(GODOT_COMPILE_FLAGS)
 set(GODOT_LINKER_FLAGS)
@@ -107,9 +100,7 @@ endif (CMAKE_BUILD_TYPE MATCHES Debug)
 
 ## OpenXR library
 # !!! TODO
-set(OPENXR_LIB_PATH "${OPENXR_ROOT_DIR}/libopenxr_loader.so")
-add_library(openxr_loader STATIC IMPORTED GLOBAL)
-set_target_properties(openxr_loader PROPERTIES IMPORTED_LOCATION ${OPENXR_LIB_PATH})
+add_library(openxr_loader SHARED IMPORTED GLOBAL)
 
 ## godot-cpp library
 set(GODOT-CPP "godot-cpp")
