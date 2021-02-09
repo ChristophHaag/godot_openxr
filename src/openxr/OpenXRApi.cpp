@@ -727,9 +727,11 @@ bool OpenXRApi::initialiseActionSets() {
 		if (!action_set->create(this)) {
 			// Just report this
 			Godot::print("Couldn't create action set {0}", action_set->get_name());
+#ifdef DEBUG
 		} else {
 			// lets print it to see if it was registered correctly
 			action_set->print();
+#endif
 		}
 	}
 
@@ -2135,7 +2137,7 @@ void OpenXRApi::process_openxr() {
 					}
 
 					XrPath new_profile = state.interactionProfile;
-					if (inputmaps[i].active_profile != new_profile) {
+					if (true || inputmaps[i].active_profile != new_profile) {
 						inputmaps[i].active_profile = new_profile;
 						if (new_profile == XR_NULL_PATH) {
 							Godot::print("OpenXR No interaction profile for {0}", inputmaps[i].path->get_name());

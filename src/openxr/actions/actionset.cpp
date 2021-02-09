@@ -118,7 +118,9 @@ bool ActionSet::create(OpenXRApi *p_api) {
 		strcpy(actionSetInfo.actionSetName, name);
 		strcpy(actionSetInfo.localizedActionSetName, localised_name);
 
-		Godot::print("Creating action set {0} - {1} {2}", name, localised_name, priority);
+#ifdef DEBUG
+		Godot::print("Creating action set {0} - {1} {2}", actionSetInfo.actionSetName, actionSetInfo.localizedActionSetName, actionSetInfo.priority);
+#endif
 
 		XrResult result = xrCreateActionSet(p_api->instance, &actionSetInfo, &handle);
 		if (!p_api->xr_result(result, "failed to create actionset {0}", name)) {
@@ -128,14 +130,17 @@ bool ActionSet::create(OpenXRApi *p_api) {
 		for (uint64_t i = 0; i < actions.size(); i++) {
 			actions[i]->create(p_api, handle);
 		}
-
-		Godot::print("Done");
 	}
 	return true;
 }
 
 bool ActionSet::attach(OpenXRApi *p_api) {
 	if (handle == XR_NULL_HANDLE) {
+		Godot::print_error("Can't attach action set if it has not been created.", __FUNCTION__, __FILE__, __LINE__);
+		return false;
+	}
+	if (p_api->session == NULL) {
+		Godot::print_error("Can't attach action set if there is no session.", __FUNCTION__, __FILE__, __LINE__);
 		return false;
 	}
 
@@ -157,6 +162,10 @@ bool ActionSet::attach(OpenXRApi *p_api) {
 }
 
 void ActionSet::destroy() {
+#ifdef DEBUG
+	Godot::print("Destroying OpenXR objects related to action set {0}", name);
+#endif
+
 	// loop through the actions and destroy them, don't delete them
 	for (uint64_t i = 0; i < actions.size(); i++) {
 		actions[i]->destroy();

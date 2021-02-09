@@ -47,7 +47,9 @@ bool InteractionProfile::update(OpenXRApi *p_api) {
 		xr_bindings[b].action = bindings[b].action->get_action();
 		xr_bindings[b].binding = bindings[b].path->get_path();
 
+#ifdef DEBUG
 		Godot::print("Binding {0} - {1} => {2}", b, (int64_t)xr_bindings[b].action, (int64_t)xr_bindings[b].binding);
+#endif
 	}
 
 	// update our profile

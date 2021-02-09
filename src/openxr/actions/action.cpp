@@ -209,7 +209,7 @@ bool Action::is_pose_active(OpenXRApi *p_api, Path *p_path) {
 		}
 
 		/*
-		if (resultState.isActive) { 
+		if (resultState.isActive) {
 			Godot::print("{0}/{1} is active", name, p_path->get_name());
 		} else {
 			Godot::print("{0}/{1} is inactive", name, p_path->get_name());
@@ -266,6 +266,11 @@ Transform Action::get_as_pose(OpenXRApi *p_api, Path *p_path, float p_world_scal
 }
 
 bool Action::create(OpenXRApi *p_api, XrActionSet p_action_set) {
+	if (p_action_set == XR_NULL_HANDLE) {
+		Godot::print_error("Can't create action when action set was not created", __FUNCTION__, __FILE__, __LINE__);
+		return false;
+	}
+
 	if (handle == XR_NULL_HANDLE) {
 		uint32_t num_of_paths = 0;
 		XrPath paths[16]; // We really don't need more then 2 or 3 max
@@ -289,7 +294,9 @@ bool Action::create(OpenXRApi *p_api, XrActionSet p_action_set) {
 		strcpy(actionInfo.actionName, name);
 		strcpy(actionInfo.localizedActionName, localised_name);
 
-		Godot::print("Created action {0} {1} {2}", name, localised_name, num_of_paths);
+#ifdef DEBUG
+		Godot::print("Created action {0} {1} {2}", actionInfo.actionName, actionInfo.localizedActionName, actionInfo.countSubactionPaths);
+#endif
 
 		XrResult result = xrCreateAction(p_action_set, &actionInfo, &handle);
 		if (!p_api->xr_result(result, "failed to create {0} action", name)) {
@@ -322,18 +329,22 @@ bool Action::create(OpenXRApi *p_api, XrActionSet p_action_set) {
 				return false;
 			}
 
+#ifdef DEBUG
 			Godot::print("Created space for {0}/{1} ({2})", name, subaction_paths[s]->get_name(), (uint64_t)space);
+#endif
 
 			spaces.push_back(space);
 		}
 	}
 
-	Godot::print("hello");
-
 	return true;
 }
 
 void Action::destroy() {
+#ifdef DEBUG
+	Godot::print("Destroying OpenXR objects related to action {0}", name);
+#endif
+
 	while (!spaces.empty()) {
 		XrSpace space = spaces.back();
 		xrDestroySpace(space);

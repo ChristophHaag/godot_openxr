@@ -8,7 +8,6 @@
 #include <Node.hpp>
 
 namespace godot {
-
 class OpenXRConfig : public Node {
 	GODOT_CLASS(OpenXRConfig, Node)
 
@@ -30,7 +29,6 @@ public:
 	int get_form_factor() const;
 	void set_form_factor(int p_form_factor);
 };
-
 } // namespace godot
 
 #endif // !OPENXR_CONFIG_H
