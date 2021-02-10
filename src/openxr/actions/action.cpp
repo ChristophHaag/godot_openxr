@@ -256,7 +256,7 @@ Transform Action::get_as_pose(OpenXRApi *p_api, Path *p_path, float p_world_scal
 				(location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
 
 		if (!spaceLocationValid) {
-			Godot::print_error(String("OpenXR Space location not valid for hand ") + String::num_int64(index), __FUNCTION__, __FILE__, __LINE__);
+			Godot::print_warning(String("OpenXR Space location not valid for hand ") + String::num_int64(index), __FUNCTION__, __FILE__, __LINE__);
 			return Transform();
 		} else {
 			// TODOneed to get worldscale
