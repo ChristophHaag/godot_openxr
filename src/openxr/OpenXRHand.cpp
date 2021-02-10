@@ -117,6 +117,12 @@ void OpenXRHand::_physics_process(float delta) {
 		for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
 			if (joints[i] != NULL) {
 				const XrPosef &pose = hand_tracker->joint_locations[i].pose;
+				XrSpaceLocationFlags flags = hand_tracker->joint_locations[i].locationFlags;
+
+				if ((flags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) == 0 ||
+						(flags & XR_SPACE_LOCATION_POSITION_VALID_BIT) == 0) {
+					continue;
+				}
 
 				Transform t = openxr_api->transform_from_pose(pose, ws);
 				if (parents[i] != -1) {
