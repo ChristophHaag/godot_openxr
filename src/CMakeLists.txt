@@ -1,19 +1,16 @@
 cmake_minimum_required(VERSION 3.6)
 
-# TODO: Why do we need this?
-SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS true)
+project(godot_openxrmobile VERSION 1.0.0 LANGUAGES C CXX)
+find_package(OpenXR)
 
-# TODO
-MESSAGE("ROOT PATH ${CMAKE_FIND_ROOT_PATH}")
-MESSAGE("CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}")
-if (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "armeabi-v7a")
-    set(CMAKE_MODULE_PATH ${CMAKE_FIND_ROOT_PATH}/lib/arm-linux-androideabi/cmake/OpenXR/)
-elseif (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "arm64-v8a")
-    set(CMAKE_MODULE_PATH ${CMAKE_FIND_ROOT_PATH}/lib/aarch64-linux-android/cmake/OpenXR/)
-endif()
+MESSAGE("OpenXR found: ${OpenXR_FOUND}")
 
-#find_package(OpenXR REQUIRED PATHS ${CMAKE_MODULE_PATH})
-include(${CMAKE_MODULE_PATH}/OpenXR-config.cmake)
+# set up common compile options
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -fexceptions -frtti")
+set(CMAKE_CXX_STANDARD 14)
+
+# TODO: do we need this?
+# SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS true)
 
 # Default android abi is arm64-v8a
 if (NOT ANDROID_ABI)
@@ -30,42 +27,8 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif (NOT CMAKE_BUILD_TYPE)
 
-if (CMAKE_BUILD_TYPE MATCHES Debug)
-    add_definitions(-D_DEBUG)
-    set(OPENXR_LIB_BUILD_TYPE Debug)
-else ()
-    add_definitions(-DNDEBUG)
-    set(OPENXR_LIB_BUILD_TYPE Release)
-endif (CMAKE_BUILD_TYPE MATCHES Debug)
-
-if (NOT (ANDROID_STL STREQUAL "c++_shared"))
-    set(ANDROID_STL "c++_shared")
-    MESSAGE("Setting ANDROID_STL to c++_shared")
-endif (NOT (ANDROID_STL STREQUAL "c++_shared"))
 MESSAGE("Using ANDROID_STL: ${ANDROID_STL}")
-
-# Check if ANDROID_NDK is set.
-if (NOT ANDROID_NDK)
-    # Set to ANDROID_NDK_HOME environment variable if it's set.
-    if (DEFINED ENV{ANDROID_NDK_HOME})
-        set(ANDROID_NDK $ENV{ANDROID_NDK_HOME})
-    else (DEFINED ENV{ANDROID_NDK_HOME})
-        message(WARNING "ANDROID_NDK_HOME is not set")
-    endif (DEFINED ENV{ANDROID_NDK_HOME})
-endif (NOT ANDROID_NDK)
-
-# Check if CMAKE_TOOLCHAIN_FILE is set.
-if (NOT CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "${ANDROID_NDK}/build/cmake/android.toolchain.cmake")
-    MESSAGE("Setting cmake toolchain file to ${CMAKE_TOOLCHAIN_FILE}")
-endif (NOT CMAKE_TOOLCHAIN_FILE)
 MESSAGE("Using cmake toolchain ${CMAKE_TOOLCHAIN_FILE}")
-
-set(CMAKE_CXX_STANDARD 14)
-#set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#set(CMAKE_CXX_EXTENSIONS OFF)
-
-project(godot_openxrmobile VERSION 1.0.0 LANGUAGES C CXX)
 
 ###############################################################################
 ## PROJECT SETUP
@@ -92,9 +55,6 @@ set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wredundant-decls -Wreturn-type 
 set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wswitch -Wswitch-enum -Wtrigraphs")
 set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wuninitialized -Wunknown-pragmas -Wunreachable-code -Wunused-label")
 set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wunused-value -Wvariadic-macros -Wvolatile-register-var -Wno-error=attributes")
-set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -fno-omit-frame-pointer -O0")
-
-MESSAGE("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
     set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -Wno-ignored-attributes")
@@ -106,18 +66,12 @@ else ()
     set(GODOT_COMPILE_FLAGS "${GODOT_COMPILE_FLAGS} -O3")
 endif (CMAKE_BUILD_TYPE MATCHES Debug)
 
-## OpenXR library
-# !!! TODO
-#add_library(openxr_loader SHARED IMPORTED GLOBAL)
 
 ## godot-cpp library
 set(GODOT-CPP "godot-cpp")
 
 file(GLOB_RECURSE GODOT_CPP_SOURCES ${GODOT_CPP_DIR}/src/*.c**)
 file(GLOB_RECURSE GODOT_CPP_HEADERS ${GODOT_CPP_DIR}/include/*.h**)
-
-MESSAGE("!! CPP SOURCES ${GODOT_CPP_SOURCES}")
-MESSAGE("!! CPP HEADERS ${GODOT_CPP_HEADERS}")
 
 add_library(${GODOT-CPP}
         SHARED
@@ -142,11 +96,10 @@ set_property(TARGET ${GODOT-CPP} APPEND_STRING PROPERTY LINK_FLAGS ${GODOT_LINKE
 
 ## Setup the plugin library
 # Get Sources
-file(GLOB_RECURSE SOURCES *.c**)
-file(GLOB_RECURSE HEADERS *.h**)
+file(GLOB SOURCES *.c *.cpp)
+file(GLOB HEADERS *.h**)
 
-MESSAGE("!! SOURCES ${SOURCES}")
-MESSAGE("!! HEADERS ${HEADERS}")
+MESSAGE("Plugin sources : ${SOURCES}")
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
@@ -168,24 +121,21 @@ target_include_directories(${PROJECT_NAME}
         )
 
 target_link_libraries(${PROJECT_NAME}
-        android
-        log
+        PRIVATE
+        #android
+        #log
         EGL
-        GLESv3
+        #GLESv3
         OpenXR::openxr_loader
         ${GODOT-CPP})
 
+# TODO: do we need this?
 # Add the compile flags
-set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS ${GODOT_COMPILE_FLAGS})
-set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS ${GODOT_LINKER_FLAGS})
+#set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS ${GODOT_COMPILE_FLAGS})
+#set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS ${GODOT_LINKER_FLAGS})
 
 get_target_property(OPENXR_LIB_PATH OpenXR::openxr_loader IMPORTED_LOCATION)
 # Copy the OpenXR shared library to the output directory.
 add_custom_command(OUTPUT OpenXR::openxr_loader
         COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${OPENXR_LIB_PATH} $<TARGET_FILE_DIR:${PROJECT_NAME}>)
-
-set(BITS 32)
-if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(BITS 64)
-endif (CMAKE_SIZEOF_VOID_P EQUAL 8)

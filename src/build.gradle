@@ -6,35 +6,32 @@ android {
     compileSdkVersion 30
     ndkVersion '22.0.7026061'
 
-    // enable prefab support for the AAR
-    buildFeatures {
-        prefab true
-    }
-
     defaultConfig {
-        minSdkVersion 30
-        targetSdkVersion 30
+        minSdkVersion 24
+        targetSdkVersion 28
+
         versionCode 4
         versionName '3.0.0'
         setProperty("archivesBaseName", "gdopenxrmobile.${versionName}")
 
         externalNativeBuild {
             cmake {
-                cppFlags "-std=c++14"
-
-                // TODO https://github.com/google/oboe/issues/812#issuecomment-604546651
-                arguments "-DANDROID_STL=c++_shared", "-DCMAKE_VERBOSE_MAKEFILE=1"
+                // cppFlags "-std=c++14"
+                cppFlags '-Wno-unused-variable'
+                arguments "-DANDROID_STL=c++_shared", '-DANDROID_TOOLCHAIN=clang', "-DCMAKE_VERBOSE_MAKEFILE=1"
             }
         }
 
         ndk {
-            abiFilters "arm64-v8a", "armeabi-v7a"
+            //abiFilters 'armeabi-v7a', 'arm64-v8a'
+            abiFilters 'arm64-v8a'
         }
     }
 
     externalNativeBuild {
         cmake {
-            path "CMakeLists.txt"
+            version '3.10.2'
+            path 'CMakeLists.txt'
         }
     }
 
@@ -44,7 +41,8 @@ android {
     }
 
     buildFeatures {
-        prefabPublishing true
+        // prefabPublishing true
+        prefab true
     }
 
     prefab {
@@ -59,7 +57,6 @@ android {
             res.srcDirs = ['res']
         }
     }
-
 }
 
 dependencies {
