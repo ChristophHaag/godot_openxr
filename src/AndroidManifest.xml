@@ -6,7 +6,7 @@
     <application>
 
         <meta-data
-                android:name="org.godotengine.plugin.v1.OpenXRMobile"
+                android:name="org.godotengine.plugin.v1.gdopenxrmobile"
                 android:value="org.godotengine.plugin.vr.openxr.mobile.OpenXRMobilePlugin" />
 
     </application>
