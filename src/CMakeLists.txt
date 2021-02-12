@@ -96,7 +96,7 @@ set_property(TARGET ${GODOT-CPP} APPEND_STRING PROPERTY LINK_FLAGS ${GODOT_LINKE
 
 ## Setup the plugin library
 # Get Sources
-file(GLOB SOURCES *.c *.cpp)
+file(GLOB SOURCES *.c *.cpp openxr/*.c openxr/*.cpp)
 file(GLOB HEADERS *.h**)
 
 MESSAGE("Plugin sources : ${SOURCES}")
@@ -116,6 +116,7 @@ target_include_directories(${PROJECT_NAME}
 # Put godot headers as SYSTEM to exclude warnings from irrelevant headers
 target_include_directories(${PROJECT_NAME}
         SYSTEM PRIVATE
+        "./"
         ${GODOT_HEADERS_DIR}
         ${OPENXR_HEADERS_DIR}
         )
